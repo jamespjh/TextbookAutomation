@@ -27,4 +27,10 @@ namespace Burden
     ∀ ε > 0, ∃ δ > 0, ∀ x, (0 < |x - x₀| ∧ |x - x₀| < δ) → |f x - L| < ε
 end Burden
 
-def RTendsto (f : ℝ → ℝ) (x₀ L : ℝ) : Prop := Filter.Tendsto f (nhds x₀) (nhds L)
+open Topology Filter
+
+def RTendsto (f : ℝ → ℝ) (x₀ L : ℝ) : Prop := Filter.Tendsto f (𝓝 x₀) (𝓝 L)
+
+theorem RTendsto_iff_BurdenTendsto (f : ℝ → ℝ) (x₀ L : ℝ) :
+    Burden.Tendsto f x₀ L ↔ RTendsto f x₀ L := by
+  sorry

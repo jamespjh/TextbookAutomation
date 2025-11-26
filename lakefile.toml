@@ -1,0 +1,14 @@
+name = "numan"
+version = "0.1.0"
+defaultTargets = ["numan"]
+
+[[lean_lib]]
+name = "Numan"
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+
+[[lean_exe]]
+name = "numan"
+root = "Main"

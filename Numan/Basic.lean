@@ -69,4 +69,37 @@ theorem RTendsto_iff_BurdenTendsto (f : ℝ → ℝ) (x₀ L : ℝ) :
 
     exact hε₂' (f x) (hδ x hx₂ hx₁)
 
-  . sorry
+  ------------ Work the other way ----------
+  . unfold RTendsto
+    unfold Tendsto
+    intro h
+    unfold Burden.Tendsto
+    simp [sub_ne_zero]
+
+    -- Unpack the filter definition --
+    apply Filter.le_def.mp at h
+    simp at h
+    unfold Set.preimage at h
+
+    -- Use the definition of neighborhood in the metric space of reals --
+    simp only [Metric.mem_nhdsWithin_iff,Metric.mem_nhds_iff] at h
+    simp only [Metric.ball, Real.dist_eq] at h
+
+    -- Introduce our objective epsilon --
+    intro ε₂ εpos
+
+    -- Choose a ball around L as our chosen neighborhood --
+    have cnh := h {y | |y - L| < ε₂}
+    have : (∃ ε > 0, {y | |y - L| < ε} ⊆ {y | |y - L| < ε₂}) := by
+      use ε₂
+    have cnh' := cnh this
+    rcases cnh' with ⟨δ, δpos, hδ⟩
+    use δ
+    constructor
+    exact δpos
+
+    -- Finish the proof --
+
+    intro x hx h3
+    simp [Set.subset_def] at hδ
+    exact hδ x h3 hx

@@ -65,6 +65,9 @@ theorem RTendsto_iff_STendsto (f : ℝ → ℝ) (x₀ L : ℝ) :
     rcases this with ⟨δ, δp, hδ⟩
     use δ
 
+theorem RTendsto_iff_BurdenTendsto (f : ℝ → ℝ) (x₀ L : ℝ) :
+    Burden.Tendsto f x₀ L ↔ RTendsto f x₀ L := by
+    apply Iff.intro <;> simp [RTendsto_iff_STendsto, STendtso_iff_BurdenTendsto]
 
 -- We will be able to reduce the equivalence of the two continuity definitions
 -- (which differ only because of the inclusion of the limit point in the

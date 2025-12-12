@@ -23,83 +23,73 @@ import Mathlib.Topology.MetricSpace.Basic
 namespace Burden
   def Tendsto (f : ℝ → ℝ) (x₀ L : ℝ) : Prop :=
     ∀ ε > 0, ∃ δ > 0, ∀ x, (0 < |x - x₀| ∧ |x - x₀| < δ) → |f x - L| < ε
+  def ContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) : Prop :=
+    Tendsto f x₀ (f x₀)
 end Burden
+
+-- State a set-theoretic definition of burden's limit definition
+
+def STendsto (f : ℝ → ℝ) (x₀ L : ℝ) : Prop :=
+  ∀ ε > 0, ∃ δ > 0, {x₀}ᶜ ∩ (Metric.ball x₀ δ )   ⊆ f ⁻¹' (Metric.ball L ε)
+
+-- Prove equivalence of set-theoretic and epsilon-delta definitions
+
+theorem STendtso_iff_BurdenTendsto (f : ℝ → ℝ) (x₀ L : ℝ) :
+    Burden.Tendsto f x₀ L ↔ STendsto f x₀ L := by
+  unfold STendsto
+  unfold Burden.Tendsto
+  simp [Real.dist_eq,  Set.subset_def, sub_eq_zero]
 
 open Topology Filter
 
 def RTendsto (f : ℝ → ℝ) (x₀ L : ℝ) : Prop := Filter.Tendsto f (𝓝[≠] x₀) (𝓝 L)
+def RContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) : Prop := ContinuousAt f x₀
 
-theorem RTendsto_iff_BurdenTendsto (f : ℝ → ℝ) (x₀ L : ℝ) :
-    Burden.Tendsto f x₀ L ↔ RTendsto f x₀ L := by
+theorem RTendsto_iff_STendsto (f : ℝ → ℝ) (x₀ L : ℝ) :
+  STendsto f x₀ L ↔ RTendsto f x₀ L := by
+  unfold RTendsto
+  unfold STendsto
+  unfold Tendsto
+  simp [Filter.le_def,  Metric.mem_nhds_iff, Metric.mem_nhdsWithin_iff, Set.inter_comm]
   apply Iff.intro
-  · unfold RTendsto
-    unfold Tendsto
-    intro h
-    unfold Burden.Tendsto at h
-    simp [sub_ne_zero] at h
+  · intro h cn ε εp hcn
+    have := h ε εp
+    rcases this with ⟨δ, δp, hδ⟩
+    use δ
+    constructor
+    . exact δp
+    exact Set.Subset.trans hδ (Set.preimage_mono hcn)
+  · intro h ε εp
+    have := h (Metric.ball L ε) ε εp
+    simp at this
+    rcases this with ⟨δ, δp, hδ⟩
+    use δ
 
-    -- Unpack the filter definition of tendsto --
+
+-- We will be able to reduce the equivalence of the two continuity definitions
+-- (which differ only because of the inclusion of the limit point in the
+-- neighborhood filter) to this:
+
+theorem punctured_ok_if_continuous: ∀ f: ℝ -> ℝ,
+    map f (𝓝[≠] x₀) ≤ 𝓝 (f x₀) ↔ map f (𝓝 x₀) ≤ 𝓝 (f x₀) := by
+  intro f
+  apply Iff.intro
+  . intro h
     apply Filter.le_def.mpr
-    simp
-    unfold Set.preimage
-    intro cn cnh
-
-    -- Use the definition of neighborhood in the metric space of reals --
-    apply Metric.mem_nhds_iff.mp at cnh
-    apply Metric.mem_nhdsWithin_iff.mpr
-    simp only [Metric.ball, Real.dist_eq] at *
-    rcases cnh with ⟨ε₂, ε₂pos, hε₂⟩
-
-    -- Clean up set member expressions in the goal and hypothesis --
-    change (∃ δ > 0, ∀ x, x∈ ({y | |y - x₀| < δ}  ∩ {x₀}ᶜ ) -> f x ∈ cn)
-    simp only [Set.mem_inter_iff, Set.mem_setOf_eq, Set.mem_compl_iff, Set.mem_singleton_iff]
-    have hε₂' : ∀ y , |y - L| < ε₂ → y ∈ cn :=
-      Set.mem_setOf_eq.mpr hε₂
-
-    -- Invoke the epsilon-delta definition --
-    have k := h ε₂ ε₂pos
-    rcases k with ⟨δ, δpos, hδ⟩
-    use δ
-    constructor
-    exact δpos
-
-    -- Finish the proof --
-    intro x hx
-    rcases hx with ⟨hx₁, hx₂⟩
-
-    exact hε₂' (f x) (hδ x hx₂ hx₁)
-
-  ------------ Work the other way ----------
-  . unfold RTendsto
-    unfold Tendsto
-    intro h
-    unfold Burden.Tendsto
-    simp [sub_ne_zero]
-
-    -- Unpack the filter definition --
     apply Filter.le_def.mp at h
-    simp at h
+    simp at *
+    unfold Set.preimage
     unfold Set.preimage at h
+    intro cn cnh
+    have := h cn cnh
 
-    -- Use the definition of neighborhood in the metric space of reals --
-    simp only [Metric.mem_nhdsWithin_iff,Metric.mem_nhds_iff] at h
-    simp only [Metric.ball, Real.dist_eq] at h
 
-    -- Introduce our objective epsilon --
-    intro ε₂ εpos
-
-    -- Choose a ball around L as our chosen neighborhood --
-    have cnh := h {y | |y - L| < ε₂}
-    have : (∃ ε > 0, {y | |y - L| < ε} ⊆ {y | |y - L| < ε₂}) := by
-      use ε₂
-    have cnh' := cnh this
-    rcases cnh' with ⟨δ, δpos, hδ⟩
-    use δ
-    constructor
-    exact δpos
-
-    -- Finish the proof --
-
-    intro x hx h3
-    simp [Set.subset_def] at hδ
-    exact hδ x h3 hx
+theorem RContinuousAt_iff_BurdenContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) :
+    Burden.ContinuousAt f x₀ ↔ RContinuousAt f x₀ := by
+  unfold RContinuousAt
+  unfold Burden.ContinuousAt
+  unfold ContinuousAt
+  simp [RTendsto_iff_BurdenTendsto]
+  unfold RTendsto
+  unfold Tendsto
+  exact punctured_ok_if_continuous f

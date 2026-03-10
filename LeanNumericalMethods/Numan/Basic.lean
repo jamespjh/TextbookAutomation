@@ -3,7 +3,7 @@
 
 -- 1.1 Review of calculus
 
--- Definition 1.1
+-- Definition 1.1 to 1.4: limits and continuity of functions
 
 -- definition of a limit of a function
 -- state the definition from the book and then find the corresponding
@@ -28,31 +28,42 @@ namespace Burden
     ∀ ε > 0, ∃ δ > 0, ∀ x, (0 < |x - x₀| ∧ |x - x₀| < δ) → |f x - L| < ε
   def ContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) : Prop :=
     Tendsto f x₀ (f x₀)
+  def TendstoSequence (f : ℕ → ℝ) (L : ℝ) : Prop :=
+    ∀ ε > 0, ∃ N, ∀ n ≥ N, |f n - L| < ε
 end Burden
-
--- State a set-theoretic definition of burden's limit definition
-
-def STendsto (f : ℝ → ℝ) (x₀ L : ℝ) : Prop :=
-  ∀ ε > 0, ∃ δ > 0, {x₀}ᶜ ∩ (Metric.ball x₀ δ )   ⊆ f ⁻¹' (Metric.ball L ε)
-
--- Prove equivalence of set-theoretic and epsilon-delta definitions
-
-theorem STendtso_iff_BurdenTendsto (f : ℝ → ℝ) (x₀ L : ℝ) :
-    Burden.Tendsto f x₀ L ↔ STendsto f x₀ L := by
-  unfold STendsto
-  unfold Burden.Tendsto
-  simp [Real.dist_eq,  Set.subset_def, sub_eq_zero]
 
 open Topology Filter
 
-def RTendsto (f : ℝ → ℝ) (x₀ L : ℝ) : Prop := Filter.Tendsto f (𝓝[≠] x₀) (𝓝 L)
-def RContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) : Prop := ContinuousAt f x₀
-def PContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) : Prop := Filter.Tendsto f (𝓝[≠] x₀) (𝓝 (f x₀))
+namespace FilterBased
+  def Tendsto (f : ℝ → ℝ) (x₀ L : ℝ) : Prop := Filter.Tendsto f (𝓝[≠] x₀) (𝓝 L)
+  def PContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) : Prop := Filter.Tendsto f (𝓝[≠] x₀) (𝓝 (f x₀))
+  def TendstoSequence (f : ℕ → ℝ) (L : ℝ) : Prop := Filter.Tendsto f Filter.atTop (𝓝 L)
+end FilterBased
 
-theorem RTendsto_iff_STendsto (f : ℝ → ℝ) (x₀ L : ℝ) :
-  STendsto f x₀ L ↔ RTendsto f x₀ L := by
-  unfold RTendsto
-  unfold STendsto
+-- State a set-theoretic definition of the definitions as well, as it
+-- helps to show the stages
+
+namespace SetBased
+  def Tendsto (f : ℝ → ℝ) (x₀ L : ℝ) : Prop :=
+    ∀ ε > 0, ∃ δ > 0, {x₀}ᶜ ∩ (Metric.ball x₀ δ )   ⊆ f ⁻¹' (Metric.ball L ε)
+  def TendstoSequence (f : ℕ → ℝ) (L : ℝ) : Prop :=
+    ∀ ε > 0, ∃ N, {n | n ≥ N} ⊆ f ⁻¹' (Metric.ball L ε)
+end SetBased
+
+-- Prove equivalence of filter-based and epsilon-delta definitions
+-- by going via the set-theoretic ball-based definition
+-- to show the stages
+
+theorem SetBasedTendsto_iff_BurdenTendsto (f : ℝ → ℝ) (x₀ L : ℝ) :
+    Burden.Tendsto f x₀ L ↔ SetBased.Tendsto f x₀ L := by
+  unfold SetBased.Tendsto
+  unfold Burden.Tendsto
+  simp [Real.dist_eq,  Set.subset_def, sub_eq_zero]
+
+theorem FilterTendsto_iff_SetBasedTendsto (f : ℝ → ℝ) (x₀ L : ℝ) :
+  SetBased.Tendsto f x₀ L ↔ FilterBased.Tendsto f x₀ L := by
+  unfold FilterBased.Tendsto
+  unfold SetBased.Tendsto
   unfold Tendsto
   simp [Filter.le_def,  Metric.mem_nhds_iff, Metric.mem_nhdsWithin_iff, Set.inter_comm]
   apply Iff.intro
@@ -69,21 +80,21 @@ theorem RTendsto_iff_STendsto (f : ℝ → ℝ) (x₀ L : ℝ) :
     rcases this with ⟨δ, δp, hδ⟩
     use δ
 
-theorem RTendsto_iff_BurdenTendsto (f : ℝ → ℝ) (x₀ L : ℝ) :
-    Burden.Tendsto f x₀ L ↔ RTendsto f x₀ L := by
-    apply Iff.intro <;> simp [RTendsto_iff_STendsto, STendtso_iff_BurdenTendsto]
+theorem FilterTendsto_iff_BurdenTendsto (f : ℝ → ℝ) (x₀ L : ℝ) :
+    Burden.Tendsto f x₀ L ↔ FilterBased.Tendsto f x₀ L := by
+    apply Iff.intro <;> simp [FilterTendsto_iff_SetBasedTendsto, SetBasedTendsto_iff_BurdenTendsto]
 
--- The two continuity definitions are equivalent, but
--- the proof will take a bit of work
-
-theorem PContinuousAt_iff_BurdenContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) :
-    Burden.ContinuousAt f x₀ ↔ PContinuousAt f x₀ := by
-  unfold PContinuousAt
+theorem FilterPuncturedContinuousAt_iff_BurdenContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) :
+    Burden.ContinuousAt f x₀ ↔ FilterBased.PContinuousAt f x₀ := by
+  unfold FilterBased.PContinuousAt
   unfold Burden.ContinuousAt
-  simp [RTendsto_iff_BurdenTendsto]
-  unfold RTendsto
+  simp [FilterTendsto_iff_BurdenTendsto]
+  unfold FilterBased.Tendsto
   unfold Tendsto
   trivial
+
+-- Not to do with Burden, but worth noting that the punctured
+-- and non-punctured definitions of continuity are equivalent.
 
 -- A reminder of the key fact: a neighbourhood is any set that contains a ball
 -- Not the balls themselves, but any set that contains a ball.
@@ -132,14 +143,13 @@ theorem in_nhd_lemma {x: ℝ} : s ∈ 𝓝 x → x ∈ s := by
     rcases h with ⟨t, ht, hts, htss⟩
     exact Set.subset_def.mpr ht htss
 
--- And the proof:
+-- And the proof
 
-theorem PContinuousAt_iff_RContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) :
-    RContinuousAt f x₀ ↔ PContinuousAt f x₀ := by
-  unfold PContinuousAt
-  unfold RContinuousAt
+theorem PContinuousAt_iff_ContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) :
+    ContinuousAt f x₀ ↔ FilterBased.PContinuousAt f x₀ := by
+  unfold FilterBased.PContinuousAt
   unfold ContinuousAt
-  unfold Tendsto
+  unfold Filter.Tendsto
   apply Iff.intro
   . apply le_trans
     apply Filter.map_mono
@@ -157,3 +167,35 @@ theorem PContinuousAt_iff_RContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) :
     constructor
     . exact mem_lemma htss h4
     . constructor <;> assumption
+
+
+-- The equivalence of the sequence definitions:
+
+theorem SetBasedTendstoSequence_iff_BurdenTendstoSequence (f : ℕ → ℝ) (L : ℝ) :
+    Burden.TendstoSequence f L ↔ SetBased.TendstoSequence f L := by
+  unfold SetBased.TendstoSequence
+  unfold Burden.TendstoSequence
+  simp [Real.dist_eq, Set.subset_def]
+
+theorem FilterTendstoSequence_iff_SetBasedTendstoSequence (f : ℕ → ℝ) (L : ℝ) :
+    SetBased.TendstoSequence f L ↔ FilterBased.TendstoSequence f L := by
+  unfold FilterBased.TendstoSequence
+  unfold SetBased.TendstoSequence
+  unfold Tendsto
+  simp [Filter.le_def, Metric.mem_nhds_iff]
+  apply Iff.intro
+  . intro h s ε εp hcn
+    simp [Set.subset_def] at hcn
+    have := h ε εp
+    rcases this with ⟨N, hN⟩
+    use N
+    intro n ltn
+    have := hN ltn
+    exact hcn (f n) this
+  . intro h ε εp
+    have := h (Metric.ball L ε) ε εp
+    simp at this
+    rcases this with ⟨N, hb⟩
+    use N
+    intro m
+    exact hb m

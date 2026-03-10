@@ -120,3 +120,23 @@ theorem PContinuousAt_if_RContinuousAt' (f : ℝ → ℝ) (x₀ : ℝ) :
   apply le_trans
   apply Filter.map_mono
   apply nhdsWithin_le_nhds
+
+-- A reminder of the key fact: a neighbourhood is any set that contains a ball
+-- Not the balls themselves, but any set that contains a ball.
+
+example: Metric.ball (1: ℝ) 0.1 ∪ {2} ∈ 𝓝 (1: ℝ) := by
+  simp [Metric.mem_nhds_iff]
+  use 0.1
+  constructor
+  . norm_num
+  . simp
+
+-- So a set which is a punctured neighbourhood is also a neighbourhood
+-- even though a ball is not a punctured neighbourhood it still contains a punctured neighbourhood, and so is a neighbourhood.
+-- and so is a neighbourhood.
+
+example: x ∈ 𝓝 x₀ → x ∈ 𝓝[≠] (x₀ : ℝ) := by
+  have : 𝓝[≠] x₀ ≤ 𝓝 x₀ := by
+    exact nhdsWithin_le_nhds
+  apply Filter.le_def.mp
+  exact this

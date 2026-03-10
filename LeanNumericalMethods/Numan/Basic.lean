@@ -21,6 +21,7 @@ import Mathlib.Topology.Defs.Filter
 import Mathlib.Topology.MetricSpace.Basic
 
 import Mathlib.Topology.NhdsWithin
+import Mathlib.Topology.Basic
 
 namespace Burden
   def Tendsto (f : ℝ → ℝ) (x₀ L : ℝ) : Prop :=
@@ -84,43 +85,6 @@ theorem PContinuousAt_iff_BurdenContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) :
   unfold Tendsto
   trivial
 
--- It's worth considering the relationship between the punctured and unpunctured
--- definitions of continuity.
-
--- One is stronger, and we should prove that:
-
-theorem PContinuousAt_if_RContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) :
-    RContinuousAt f x₀ -> PContinuousAt f x₀ := by
-  unfold PContinuousAt
-  unfold RContinuousAt
-  unfold ContinuousAt
-  unfold Tendsto
-  simp [Filter.le_def]
-  unfold Set.preimage
-  intro h s sp
-  have h2 := h s sp
-  simp [Metric.mem_nhdsWithin_iff]
-  simp [Metric.mem_nhds_iff] at h2
-  rcases h2 with ⟨δ, δp, hδ⟩
-  use δ
-  constructor
-  . exact δp
-  have : ((Metric.ball x₀ δ) ∩ {x₀}ᶜ) ⊆ (Metric.ball x₀ δ) := by
-    exact Set.inter_subset_left
-  exact Set.Subset.trans this hδ
-
--- Or alternatively, using the order on filters:
-
-theorem PContinuousAt_if_RContinuousAt' (f : ℝ → ℝ) (x₀ : ℝ) :
-    RContinuousAt f x₀ -> PContinuousAt f x₀ := by
-  unfold PContinuousAt
-  unfold RContinuousAt
-  unfold ContinuousAt
-  unfold Tendsto
-  apply le_trans
-  apply Filter.map_mono
-  apply nhdsWithin_le_nhds
-
 -- A reminder of the key fact: a neighbourhood is any set that contains a ball
 -- Not the balls themselves, but any set that contains a ball.
 
@@ -140,3 +104,57 @@ example: x ∈ 𝓝 x₀ → x ∈ 𝓝[≠] (x₀ : ℝ) := by
     exact nhdsWithin_le_nhds
   apply Filter.le_def.mp
   exact this
+
+-- Proving the punctured and non-punctured definitions of continuity are equivalent is a bit more work, but it is just a matter of unpacking the definitions and using the fact that a neighbourhood contains a punctured neighbourhood.
+-- One direction is easy - use transitivity with the definition of the <= relation on filters
+-- The other requires the fact that the image neighbourhood is unpunctured,
+-- so we can prove the limit point image goes where it should, and fill in the hole
+
+-- Two key lemmas:
+
+theorem mem_lemma {a b: Set ℝ} {x: ℝ} : a ∩ {x}ᶜ ⊆ b → x ∈ b → a ⊆ b := by
+  intro h1 h2 y hy
+  by_cases h3: y = x
+  . rw [h3]
+    exact h2
+  . have : y ∈ ({x}ᶜ : Set ℝ) := by
+      simp [Set.mem_compl_iff]
+      exact h3
+    have : y ∈ a ∩ {x}ᶜ := by
+      simp [Set.mem_inter_iff]
+      constructor <;> assumption
+    exact Set.subset_def.mp h1 y this
+
+theorem in_nhd_lemma (x: ℝ) : s ∈ 𝓝 x → x ∈ s := by
+    -- prove using definition of neighbourhoods
+    intro h
+    simp [mem_nhds_iff] at h
+    rcases h with ⟨t, ht, hts, htss⟩
+    exact Set.subset_def.mpr ht htss
+
+-- And the proof:
+
+theorem PContinuousAt_iff_RContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) :
+    RContinuousAt f x₀ ↔ PContinuousAt f x₀ := by
+  unfold PContinuousAt
+  unfold RContinuousAt
+  unfold ContinuousAt
+  unfold Tendsto
+  apply Iff.intro
+  . apply le_trans
+    apply Filter.map_mono
+    apply nhdsWithin_le_nhds
+  . simp [Filter.le_def]
+    unfold Set.preimage
+    intro h s sp
+    have h2 := h s sp
+    simp [mem_nhds_iff]
+    simp [mem_nhdsWithin] at h2
+    have := in_nhd_lemma (f x₀) sp
+    have h4 : x₀ ∈ {x | f x ∈ s} := by
+      simpa [Set.mem_setOf_eq]
+    rcases h2 with ⟨t, ht, hts, htss⟩
+    use t
+    constructor
+    . exact mem_lemma htss h4
+    . constructor <;> assumption

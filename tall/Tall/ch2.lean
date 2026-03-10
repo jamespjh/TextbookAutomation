@@ -119,7 +119,7 @@ theorem negate_num_also_root (p q : ℤ) (h : are_rational_root_two p q):
   unfold are_rational_root_two
   constructor
   . exact qnz
-  . ring
+  . ring_nf
     assumption
 
 theorem negate_both_also_root (p q : ℤ) (h : are_rational_root_two p q):

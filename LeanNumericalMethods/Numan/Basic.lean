@@ -85,6 +85,8 @@ theorem punctured_ok_if_continuous: ∀ f: ℝ -> ℝ,
     unfold Set.preimage at h
     intro cn cnh
     have := h cn cnh
+    sorry
+  . sorry
 
 
 theorem RContinuousAt_iff_BurdenContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) :

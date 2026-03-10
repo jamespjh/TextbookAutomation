@@ -73,8 +73,8 @@ theorem RTendsto_iff_BurdenTendsto (f : ℝ → ℝ) (x₀ L : ℝ) :
     Burden.Tendsto f x₀ L ↔ RTendsto f x₀ L := by
     apply Iff.intro <;> simp [RTendsto_iff_STendsto, STendtso_iff_BurdenTendsto]
 
--- The two continuity definitions are not quite equivalent.
--- The burden definition allows for a point discontinuity, while the filter definition does not.
+-- The two continuity definitions are equivalent, but
+-- the proof will take a bit of work
 
 theorem PContinuousAt_iff_BurdenContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) :
     Burden.ContinuousAt f x₀ ↔ PContinuousAt f x₀ := by

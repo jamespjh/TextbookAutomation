@@ -145,14 +145,13 @@ theorem PContinuousAt_iff_RContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) :
     apply Filter.map_mono
     apply nhdsWithin_le_nhds
   . simp [Filter.le_def]
-    unfold Set.preimage
     intro h s sp
     have h2 := h s sp
+    have := in_nhd_lemma (f x₀) sp
+    have h4 : x₀ ∈ f ⁻¹' s := by
+      simpa [Set.mem_setOf_eq]
     simp [mem_nhds_iff]
     simp [mem_nhdsWithin] at h2
-    have := in_nhd_lemma (f x₀) sp
-    have h4 : x₀ ∈ {x | f x ∈ s} := by
-      simpa [Set.mem_setOf_eq]
     rcases h2 with ⟨t, ht, hts, htss⟩
     use t
     constructor

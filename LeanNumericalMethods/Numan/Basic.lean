@@ -20,6 +20,8 @@ import Mathlib.Order.Filter.Tendsto
 import Mathlib.Topology.Defs.Filter
 import Mathlib.Topology.MetricSpace.Basic
 
+import Mathlib.Topology.NhdsWithin
+
 namespace Burden
   def Tendsto (f : ℝ → ℝ) (x₀ L : ℝ) : Prop :=
     ∀ ε > 0, ∃ δ > 0, ∀ x, (0 < |x - x₀| ∧ |x - x₀| < δ) → |f x - L| < ε
@@ -44,6 +46,7 @@ open Topology Filter
 
 def RTendsto (f : ℝ → ℝ) (x₀ L : ℝ) : Prop := Filter.Tendsto f (𝓝[≠] x₀) (𝓝 L)
 def RContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) : Prop := ContinuousAt f x₀
+def PContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) : Prop := Filter.Tendsto f (𝓝[≠] x₀) (𝓝 (f x₀))
 
 theorem RTendsto_iff_STendsto (f : ℝ → ℝ) (x₀ L : ℝ) :
   STendsto f x₀ L ↔ RTendsto f x₀ L := by
@@ -69,32 +72,51 @@ theorem RTendsto_iff_BurdenTendsto (f : ℝ → ℝ) (x₀ L : ℝ) :
     Burden.Tendsto f x₀ L ↔ RTendsto f x₀ L := by
     apply Iff.intro <;> simp [RTendsto_iff_STendsto, STendtso_iff_BurdenTendsto]
 
--- We will be able to reduce the equivalence of the two continuity definitions
--- (which differ only because of the inclusion of the limit point in the
--- neighborhood filter) to this:
+-- The two continuity definitions are not quite equivalent.
+-- The burden definition allows for a point discontinuity, while the filter definition does not.
 
-theorem punctured_ok_if_continuous: ∀ f: ℝ -> ℝ,
-    map f (𝓝[≠] x₀) ≤ 𝓝 (f x₀) ↔ map f (𝓝 x₀) ≤ 𝓝 (f x₀) := by
-  intro f
-  apply Iff.intro
-  . intro h
-    apply Filter.le_def.mpr
-    apply Filter.le_def.mp at h
-    simp at *
-    unfold Set.preimage
-    unfold Set.preimage at h
-    intro cn cnh
-    have := h cn cnh
-    sorry
-  . sorry
-
-
-theorem RContinuousAt_iff_BurdenContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) :
-    Burden.ContinuousAt f x₀ ↔ RContinuousAt f x₀ := by
-  unfold RContinuousAt
+theorem PContinuousAt_iff_BurdenContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) :
+    Burden.ContinuousAt f x₀ ↔ PContinuousAt f x₀ := by
+  unfold PContinuousAt
   unfold Burden.ContinuousAt
-  unfold ContinuousAt
   simp [RTendsto_iff_BurdenTendsto]
   unfold RTendsto
   unfold Tendsto
-  exact punctured_ok_if_continuous f
+  trivial
+
+-- It's worth considering the relationship between the punctured and unpunctured
+-- definitions of continuity.
+
+-- One is stronger, and we should prove that:
+
+theorem PContinuousAt_if_RContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) :
+    RContinuousAt f x₀ -> PContinuousAt f x₀ := by
+  unfold PContinuousAt
+  unfold RContinuousAt
+  unfold ContinuousAt
+  unfold Tendsto
+  simp [Filter.le_def]
+  unfold Set.preimage
+  intro h s sp
+  have h2 := h s sp
+  simp [Metric.mem_nhdsWithin_iff]
+  simp [Metric.mem_nhds_iff] at h2
+  rcases h2 with ⟨δ, δp, hδ⟩
+  use δ
+  constructor
+  . exact δp
+  have : ((Metric.ball x₀ δ) ∩ {x₀}ᶜ) ⊆ (Metric.ball x₀ δ) := by
+    exact Set.inter_subset_left
+  exact Set.Subset.trans this hδ
+
+-- Or alternatively, using the order on filters:
+
+theorem PContinuousAt_if_RContinuousAt' (f : ℝ → ℝ) (x₀ : ℝ) :
+    RContinuousAt f x₀ -> PContinuousAt f x₀ := by
+  unfold PContinuousAt
+  unfold RContinuousAt
+  unfold ContinuousAt
+  unfold Tendsto
+  apply le_trans
+  apply Filter.map_mono
+  apply nhdsWithin_le_nhds

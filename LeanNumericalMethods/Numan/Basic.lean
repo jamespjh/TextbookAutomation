@@ -37,6 +37,7 @@ open Topology Filter
 namespace FilterBased
   def Tendsto (f : ℝ → ℝ) (x₀ L : ℝ) : Prop := Filter.Tendsto f (𝓝[≠] x₀) (𝓝 L)
   def PContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) : Prop := Filter.Tendsto f (𝓝[≠] x₀) (𝓝 (f x₀))
+  -- def ContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) : Prop := Filter.Tendsto f (𝓝 x₀) (𝓝 (f x₀)) -- in mathlib
   def TendstoSequence (f : ℕ → ℝ) (L : ℝ) : Prop := Filter.Tendsto f Filter.atTop (𝓝 L)
 end FilterBased
 
@@ -199,3 +200,21 @@ theorem FilterTendstoSequence_iff_SetBasedTendstoSequence (f : ℕ → ℝ) (L :
     use N
     intro m
     exact hb m
+
+-- Theorem 1.4: the equivalence of continuity of a function at a point and the limit of the function along any sequence converging to that point
+
+theorem FilterBasedContinuous_iff_FilterBasedTendstoSequence (f : ℝ → ℝ)  (x₀: ℝ):
+    ContinuousAt f x₀ ↔ ∀ (xi : ℕ → ℝ), ( FilterBased.TendstoSequence xi x₀) → FilterBased.TendstoSequence (f ∘ xi) (f x₀) := by
+      unfold FilterBased.TendstoSequence
+      unfold ContinuousAt
+      unfold Tendsto
+      apply Iff.intro
+      . intro lt1 hxi lt2
+        have h1 : map (f ∘ hxi) atTop = map f (map hxi atTop) := by
+            apply Filter.map_map
+        have h2 : map f (map hxi atTop) ≤ map f (𝓝 x₀) := by
+            exact Filter.map_mono lt2
+        rw [<-h1] at h2
+        exact le_trans h2 lt1
+      . intro hxi ball hhxi
+        sorry

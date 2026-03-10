@@ -125,7 +125,7 @@ theorem mem_lemma {a b: Set ℝ} {x: ℝ} : a ∩ {x}ᶜ ⊆ b → x ∈ b → a
       constructor <;> assumption
     exact Set.subset_def.mp h1 y this
 
-theorem in_nhd_lemma (x: ℝ) : s ∈ 𝓝 x → x ∈ s := by
+theorem in_nhd_lemma {x: ℝ} : s ∈ 𝓝 x → x ∈ s := by
     -- prove using definition of neighbourhoods
     intro h
     simp [mem_nhds_iff] at h
@@ -147,7 +147,7 @@ theorem PContinuousAt_iff_RContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) :
   . simp [Filter.le_def]
     intro h s sp
     have h2 := h s sp
-    have := in_nhd_lemma (f x₀) sp
+    have := in_nhd_lemma sp
     have h4 : x₀ ∈ f ⁻¹' s := by
       simpa [Set.mem_setOf_eq]
     simp [mem_nhds_iff]

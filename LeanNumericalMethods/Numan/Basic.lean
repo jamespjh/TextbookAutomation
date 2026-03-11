@@ -203,9 +203,23 @@ theorem FilterTendstoSequence_iff_SetBasedTendstoSequence (f : ℕ → ℝ) (L :
 
 -- Theorem 1.4: the equivalence of continuity of a function at a point and the limit of the function along any sequence converging to that point
 
+theorem BurdenContinuousAt_iff_BurdenTendstoSequence (f : ℝ → ℝ)  (x₀: ℝ):
+    ContinuousAt f x₀ ↔ ∀ (xi : ℕ → ℝ), ( Burden.TendstoSequence xi x₀) → Burden.TendstoSequence (f ∘ xi) (f x₀) := by
+      unfold Burden.TendstoSequence
+      unfold ContinuousAt
+      unfold Tendsto
+      simp [Filter.le_def,  Metric.mem_nhds_iff]
+      unfold Metric.ball
+      simp [Real.dist_eq]
+      unfold Set.preimage
+      apply Iff.intro
+      . intro h1 xi h2 ε lt
+        sorry
+      . intro h1 s ε lt b
+        sorry
+
 theorem FilterBasedContinuous_iff_FilterBasedTendstoSequence (f : ℝ → ℝ)  (x₀: ℝ):
     ContinuousAt f x₀ ↔ ∀ (xi : ℕ → ℝ), ( FilterBased.TendstoSequence xi x₀) → FilterBased.TendstoSequence (f ∘ xi) (f x₀) := by
-      unfold FilterBased.TendstoSequence
       unfold ContinuousAt
       unfold Tendsto
       apply Iff.intro

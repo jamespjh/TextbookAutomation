@@ -214,7 +214,15 @@ theorem BurdenContinuousAt_iff_BurdenTendstoSequence (f : ℝ → ℝ)  (x₀: �
       unfold Set.preimage
       apply Iff.intro
       . intro h1 xi h2 ε lt
-        sorry
+        have := h1 {y | |y - f x₀| < ε} ε lt
+        simp at this
+        rcases this with ⟨δ, δp, hδ⟩
+        have := h2 δ δp
+        rcases this with ⟨N, hN⟩
+        use N
+        intro n ltn
+        have := hN n ltn
+        exact hδ (xi n) this
       . intro h1 s ε lt b
         sorry
 

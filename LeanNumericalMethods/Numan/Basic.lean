@@ -203,47 +203,6 @@ theorem FilterTendstoSequence_iff_SetBasedTendstoSequence (f : ℕ → ℝ) (L :
 
 -- Theorem 1.4: the equivalence of continuity of a function at a point and the limit of the function along any sequence converging to that point
 
-noncomputable def xi (x₀ z : ℝ) (n : ℕ) : ℝ := x₀ + z / 2^n
-
-theorem xi_tends_to_x₀ : ∀ z, ∀ δ, 0 < δ → ∃ N, ∀ (n: ℕ), N ≤ n → |xi x₀ z n - x₀| < δ := by
-  sorry
-
-theorem BurdenContinuousAt_iff_BurdenTendstoSequence (f : ℝ → ℝ)  (x₀: ℝ):
-    ContinuousAt f x₀ ↔ ∀ (xi : ℕ → ℝ), ( Burden.TendstoSequence xi x₀) → Burden.TendstoSequence (f ∘ xi) (f x₀) := by
-      unfold Burden.TendstoSequence
-      unfold ContinuousAt
-      unfold Tendsto
-      simp [Filter.le_def,  Metric.mem_nhds_iff]
-      unfold Metric.ball
-      simp [Real.dist_eq]
-      unfold Set.preimage
-      apply Iff.intro
-      . intro h1 xi h2 ε lt
-        have := h1 {y | |y - f x₀| < ε} ε lt
-        simp at this
-        rcases this with ⟨δ, δp, hδ⟩
-        have := h2 δ δp
-        rcases this with ⟨N, hN⟩
-        use N
-        intro n ltn
-        have := hN n ltn
-        exact hδ (xi n) this
-      . intro h1 s ε lt b
-
-        have := fun z => h1 (xi x₀ z) (xi_tends_to_x₀ z) ε lt
-
-
-        have : ∃ δ, 0 < δ ∧ ∀ x, (|x - x₀| < δ → |f x - f x₀| < ε) := by
-
-          sorry
-        rcases this with ⟨δ, δp, hp⟩
-        use δ
-        constructor
-        . exact δp
-        . intro y yp
-          exact b (hp y yp)
-
-
 -- This is tendsto_nhds_iff_seq_tendsto in Mathlib.Topology.Sequences,
 -- https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Topology/Sequences.lean
 
@@ -268,12 +227,78 @@ example (x₀ : ℝ) (xii : ℕ → ℝ) (h : map xii atTop ≤ 𝓝 x₀) : map
   have : Nonempty (map xii atTop ≤ 𝓝 x₀) := by use h
   rw [iSup_const]
 
--- with this notation, the fact that it might be equal or nearly equal to the neighborhood filter is reasonable
+-- with this notation, the fact that it might be equal to the neighborhood filter is reasonable.
+
+-- We need the Frechet-Urysohn property for ℝ, which is a metric space, and so first countable, and so Frechet-Urysohn
+
+-- We will prove directly using epsilon-delta arguments for balls and sequences in the reals
+-- that a set containing all sequences that tend to x₀ is a neighbourhood of x₀
+
+noncomputable def xi (x₀ : ℝ) (n : ℕ) : ℝ := x₀ + 1 / (n+1)
+
+theorem xi_range : ∀ (x : ℝ), 0 < x → ∃ (n : ℕ), 1 / |(n:ℝ )+1| < x := by
+  intro x xp
+  sorry
+
+theorem xi_tends_to_x₀ : ∀ δ, 0 < δ → ∃ N, ∀ (n: ℕ), N ≤ n → |xi x₀ n - x₀| < δ := by
+  sorry
+
+theorem xi_inv_mono : ∀ (n N: ℕ), N ≤ n → |(n: ℝ ) + 1|⁻¹ ≤ |(N : ℝ ) + 1|⁻¹ := by
+  sorry
+
+theorem xi_dist_pos : ∀ n, 0 < |xi x₀ n - x₀| := by
+  intro n
+  simp [xi]
+  linarith
+
+theorem set_containing_all_sequences_tending_to_x₀_is_nhd (s : Set ℝ) (x₀ : ℝ) :
+  (∀ (xi : ℕ → ℝ), (∀ δ, 0 < δ → ∃ N, ∀ n, N ≤ n → |xi n - x₀| < δ) ->
+  ∃ N1, ∀ n, N1 ≤ n -> xi n ∈ s) -> ∃ ε, 0 < ε ∧ ∀ (x : ℝ), |x - x₀| < ε → x ∈ s := by
+    intro h
+    by_contra h1
+    simp at h1
+    have := fun n => h1 |(xi x₀ n)-x₀| (xi_dist_pos n)
+    simp [xi] at this
+    choose badn b c using this
+    have badn_conv : ∀ ε > 0, ∃ N, ∀ n ≥ N, |badn n - x₀| < ε := by
+      intro ε εp
+      have := (xi_range ε εp)
+      rcases this with ⟨N, hN⟩
+      use N
+      intro n ltn
+      have b2 := b n
+      have := xi_inv_mono n N ltn
+      norm_num at *
+      have := lt_of_le_of_lt this hN
+      exact lt_trans b2 this
+    have h2 := h badn badn_conv
+    rcases h2 with ⟨N, hN⟩
+    have := hN N (le_refl N)
+    have := c N
+    contradiction
+
+theorem nhd_contains_all_seq_tending_to_x₀ (s : Set ℝ) (x₀ : ℝ) :
+  (∃ ε, 0 < ε ∧ ∀ (x : ℝ), |x - x₀| < ε → x ∈ s) -> ∀ (xi : ℕ → ℝ), (∀ δ, 0 < δ → ∃ N, ∀ n, N ≤ n → |xi n - x₀| < δ) ->
+  ∃ N1, ∀ n, N1 ≤ n -> xi n ∈ s := by
+    intro h xi hxi
+    rcases h with ⟨ε, εp, hε⟩
+    have := hxi ε εp
+    rcases this with ⟨N1, hN1⟩
+    use N1
+    intro n ltn
+    have := hN1 n ltn
+    exact hε (xi n) this
+
+theorem nhd_is_set_containing_all_seq_tending_to_x₀ (s : Set ℝ) (x₀ : ℝ) :
+  (∃ ε, 0 < ε ∧ ∀ (x : ℝ), |x - x₀| < ε → x ∈ s) ↔ ∀ (xi : ℕ → ℝ), (∀ δ, 0 < δ → ∃ N, ∀ n, N ≤ n → |xi n - x₀| < δ) ->
+  ∃ N1, ∀ n, N1 ≤ n -> xi n ∈ s := by
+    apply Iff.intro
+    . exact nhd_contains_all_seq_tending_to_x₀ s x₀
+    . exact set_containing_all_sequences_tending_to_x₀_is_nhd s x₀
+
+-- We can now prove our supremum filter is the same as the neighborhood filter
 
 theorem all_seq_tendsto_filter_eq_nhds (x₀ : ℝ) : all_seq_tendsto_filter x₀ = 𝓝 x₀ := by
-  -- this is Frechet-Urysohn property for ℝ, which is a metric space, and so first countable, and so Frechet-Urysohn
-  -- but we will prove it directly using the definition of the filter,
-  -- and epsilon-delta arguments for balls and sequences in the reals
   unfold all_seq_tendsto_filter
   apply le_antisymm
   . simp only [iSup_le_iff, imp_self, implies_true]
@@ -285,7 +310,9 @@ theorem all_seq_tendsto_filter_eq_nhds (x₀ : ℝ) : all_seq_tendsto_filter x�
     simp_rw [this] at hs
     simp [Metric.tendsto_nhds, Real.dist_eq] at hs
     -- We are now in a pure epsilon-delta world --
-    sorry
+    have := set_containing_all_sequences_tending_to_x₀_is_nhd s x₀ hs
+    simp [Set.subset_def]
+    assumption
 
 theorem FilterBasedContinuous_iff_FilterBasedTendstoSequence (f : ℝ → ℝ)  (x₀: ℝ):
     ContinuousAt f x₀ ↔ ∀ (xs : ℕ → ℝ), ( FilterBased.TendstoSequence xs x₀) → FilterBased.TendstoSequence (f ∘ xs) (f x₀) := by
@@ -307,3 +334,37 @@ theorem FilterBasedContinuous_iff_FilterBasedTendstoSequence (f : ℝ → ℝ)  
           assumption
         rw [all_seq_tendsto_filter_eq_nhds] at this
         exact this
+
+-- It is nice to show the whole thing in epsilon-delta form as well
+theorem BurdenContinuousAt_iff_BurdenTendstoSequence (f : ℝ → ℝ)  (x₀: ℝ):
+  ContinuousAt f x₀ ↔ ∀ (xi : ℕ → ℝ), ( Burden.TendstoSequence xi x₀) → Burden.TendstoSequence (f ∘ xi) (f x₀) := by
+    unfold Burden.TendstoSequence
+    unfold ContinuousAt
+    unfold Tendsto
+    simp [Filter.le_def,  Metric.mem_nhds_iff]
+    unfold Metric.ball
+    simp [Real.dist_eq]
+    unfold Set.preimage
+    apply Iff.intro
+    . intro h1 xi h2 ε lt
+      have := h1 {y | |y - f x₀| < ε} ε lt
+      simp at this
+      rcases this with ⟨δ, δp, hδ⟩
+      have := h2 δ δp
+      rcases this with ⟨N, hN⟩
+      use N
+      intro n ltn
+      have := hN n ltn
+      exact hδ (xi n) this
+    . intro h1 s ε lt b
+      simp [Set.subset_def] at *
+      simp_rw [<-Set.mem_preimage]
+      rw [nhd_is_set_containing_all_seq_tending_to_x₀ (f⁻¹' s) x₀]
+      intro xi hxi
+      have := h1 xi hxi ε lt
+      rcases this with ⟨N, hN⟩
+      use N
+      intro n ltn
+      have := hN n ltn
+      have := b (f (xi n)) this
+      assumption

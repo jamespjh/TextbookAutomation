@@ -124,12 +124,12 @@ example: x ∈ 𝓝 x₀ → x ∈ 𝓝[≠] (x₀ : ℝ) := by
 
 -- Two key lemmas:
 
-theorem mem_lemma {a b: Set ℝ} {x: ℝ} : a ∩ {x}ᶜ ⊆ b → x ∈ b → a ⊆ b := by
+theorem mem_lemma {a b: Set α} {x: α} : a ∩ {x}ᶜ ⊆ b → x ∈ b → a ⊆ b := by
   intro h1 h2 y hy
   by_cases h3: y = x
   . rw [h3]
     exact h2
-  . have : y ∈ ({x}ᶜ : Set ℝ) := by
+  . have : y ∈ ({x}ᶜ : Set α) := by
       simp [Set.mem_compl_iff]
       exact h3
     have : y ∈ a ∩ {x}ᶜ := by
@@ -137,7 +137,7 @@ theorem mem_lemma {a b: Set ℝ} {x: ℝ} : a ∩ {x}ᶜ ⊆ b → x ∈ b → a
       constructor <;> assumption
     exact Set.subset_def.mp h1 y this
 
-theorem in_nhd_lemma {x: ℝ} : s ∈ 𝓝 x → x ∈ s := by
+theorem in_nhd_lemma [TopologicalSpace α] {x: α} : s ∈ 𝓝 x → x ∈ s := by
     -- prove using definition of neighbourhoods
     intro h
     simp [mem_nhds_iff] at h
@@ -146,9 +146,8 @@ theorem in_nhd_lemma {x: ℝ} : s ∈ 𝓝 x → x ∈ s := by
 
 -- And the proof
 
-theorem PContinuousAt_iff_ContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) :
-    ContinuousAt f x₀ ↔ FilterBased.PContinuousAt f x₀ := by
-  unfold FilterBased.PContinuousAt
+theorem PFContinuousAt_iff_ContinuousAt [TopologicalSpace α] [TopologicalSpace β] (f : α → β) (x₀ : α) :
+    ContinuousAt f x₀ ↔ Filter.Tendsto f (𝓝[≠] x₀) (𝓝 (f x₀)) := by
   unfold ContinuousAt
   unfold Filter.Tendsto
   apply Iff.intro
@@ -169,6 +168,10 @@ theorem PContinuousAt_iff_ContinuousAt (f : ℝ → ℝ) (x₀ : ℝ) :
     . exact mem_lemma htss h4
     . constructor <;> assumption
 
+theorem PContinContinuousAt_iff_ContinuousAt (f : ℝ  → ℝ ) (x₀ : ℝ ) :
+    ContinuousAt f x₀ ↔ FilterBased.PContinuousAt f x₀ := by
+  unfold FilterBased.PContinuousAt
+  simp [PFContinuousAt_iff_ContinuousAt]
 
 -- The equivalence of the sequence definitions:
 

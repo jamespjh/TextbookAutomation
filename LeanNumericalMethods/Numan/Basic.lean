@@ -168,7 +168,7 @@ theorem PFContinuousAt_iff_ContinuousAt [TopologicalSpace α] [TopologicalSpace 
     . exact mem_lemma htss h4
     . constructor <;> assumption
 
-theorem PContinContinuousAt_iff_ContinuousAt (f : ℝ  → ℝ ) (x₀ : ℝ ) :
+theorem PContinuousAt_iff_ContinuousAt (f : ℝ  → ℝ ) (x₀ : ℝ ) :
     ContinuousAt f x₀ ↔ FilterBased.PContinuousAt f x₀ := by
   unfold FilterBased.PContinuousAt
   simp [PFContinuousAt_iff_ContinuousAt]
@@ -275,7 +275,7 @@ theorem xi_tends_to_x₀ : ∀ δ, 0 < δ → ∃ N, ∀ (n: ℕ), N ≤ n → |
   simp_rw [pos_lem]
   exact inv_conv_zero δ δp
 
-theorem set_containing_all_sequences_tending_to_x₀_is_nhd (s : Set ℝ) (x₀ : ℝ) :
+theorem set_containing_all_sequences_tending_to_x₀_is_nhd {s : Set ℝ} {x₀ : ℝ} :
   (∀ (xi : ℕ → ℝ), (∀ δ, 0 < δ → ∃ N, ∀ n, N ≤ n → |xi n - x₀| < δ) ->
   ∃ N1, ∀ n, N1 ≤ n -> xi n ∈ s) -> ∃ ε, 0 < ε ∧ ∀ (x : ℝ), |x - x₀| < ε → x ∈ s := by
     intro h
@@ -302,7 +302,7 @@ theorem set_containing_all_sequences_tending_to_x₀_is_nhd (s : Set ℝ) (x₀ 
     have := c N
     contradiction
 
-theorem nhd_contains_all_seq_tending_to_x₀ (s : Set ℝ) (x₀ : ℝ) :
+theorem nhd_contains_all_seq_tending_to_x₀ {s : Set ℝ} {x₀ : ℝ} :
   (∃ ε, 0 < ε ∧ ∀ (x : ℝ), |x - x₀| < ε → x ∈ s) -> ∀ (xi : ℕ → ℝ), (∀ δ, 0 < δ → ∃ N, ∀ n, N ≤ n → |xi n - x₀| < δ) ->
   ∃ N1, ∀ n, N1 ≤ n -> xi n ∈ s := by
     intro h xi hxi
@@ -314,12 +314,12 @@ theorem nhd_contains_all_seq_tending_to_x₀ (s : Set ℝ) (x₀ : ℝ) :
     have := hN1 n ltn
     exact hε (xi n) this
 
-theorem nhd_is_set_containing_all_seq_tending_to_x₀ (s : Set ℝ) (x₀ : ℝ) :
+theorem nhd_is_set_containing_all_seq_tending_to_x₀ {s : Set ℝ} {x₀ : ℝ} :
   (∃ ε, 0 < ε ∧ ∀ (x : ℝ), |x - x₀| < ε → x ∈ s) ↔ ∀ (xi : ℕ → ℝ), (∀ δ, 0 < δ → ∃ N, ∀ n, N ≤ n → |xi n - x₀| < δ) ->
   ∃ N1, ∀ n, N1 ≤ n -> xi n ∈ s := by
     apply Iff.intro
-    . exact nhd_contains_all_seq_tending_to_x₀ s x₀
-    . exact set_containing_all_sequences_tending_to_x₀_is_nhd s x₀
+    . exact nhd_contains_all_seq_tending_to_x₀
+    . exact set_containing_all_sequences_tending_to_x₀_is_nhd
 
 -- We can now prove our supremum filter is the same as the neighborhood filter
 
@@ -335,7 +335,7 @@ theorem all_seq_tendsto_filter_eq_nhds (x₀ : ℝ) : all_seq_tendsto_filter x�
     simp_rw [this] at hs
     simp [Metric.tendsto_nhds, Real.dist_eq] at hs
     -- We are now in a pure epsilon-delta world --
-    have := set_containing_all_sequences_tending_to_x₀_is_nhd s x₀ hs
+    have := set_containing_all_sequences_tending_to_x₀_is_nhd hs
     simp [Set.subset_def]
     assumption
 
@@ -390,7 +390,7 @@ theorem BurdenContinuousAt_iff_BurdenTendstoSequence' (f : ℝ → ℝ)  (x₀: 
     . intro h1 s ε lt b
       simp [Set.subset_def] at *
       simp_rw [<-Set.mem_preimage]
-      rw [nhd_is_set_containing_all_seq_tending_to_x₀ (f⁻¹' s) x₀]
+      rw [nhd_is_set_containing_all_seq_tending_to_x₀]
       intro xi hxi
       have := h1 xi hxi ε lt
       rcases this with ⟨N, hN⟩

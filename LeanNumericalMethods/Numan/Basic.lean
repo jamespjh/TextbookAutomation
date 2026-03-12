@@ -234,22 +234,37 @@ example (x₀ : ℝ) (xii : ℕ → ℝ) (h : map xii atTop ≤ 𝓝 x₀) : map
 -- We will prove directly using epsilon-delta arguments for balls and sequences in the reals
 -- that a set containing all sequences that tend to x₀ is a neighbourhood of x₀
 
-noncomputable def xi (x₀ : ℝ) (n : ℕ) : ℝ := x₀ + 1 / (n+1)
+noncomputable def xi (x₀ : ℝ) (n : ℕ) : ℝ := x₀ + |(n:ℝ)+1|⁻¹
 
-theorem xi_range : ∀ (x : ℝ), 0 < x → ∃ (n : ℕ), 1 / |(n:ℝ )+1| < x := by
-  intro x xp
-  sorry
+theorem inv_mono : ∀ (n N: ℕ), N ≤ n → |(n: ℝ ) + 1|⁻¹ ≤ |(N : ℝ ) + 1|⁻¹ := by
+  intro n N ltn
+  gcongr
 
-theorem xi_tends_to_x₀ : ∀ δ, 0 < δ → ∃ N, ∀ (n: ℕ), N ≤ n → |xi x₀ n - x₀| < δ := by
-  sorry
+theorem inv_range : ∀ (δ : ℝ), 0 < δ → ∃ n:ℕ, |(n: ℝ )+1|⁻¹ < δ := by
+  intro δ δp
+  have := exists_nat_one_div_lt δp
+  norm_num at this
+  norm_cast at *
 
-theorem xi_inv_mono : ∀ (n N: ℕ), N ≤ n → |(n: ℝ ) + 1|⁻¹ ≤ |(N : ℝ ) + 1|⁻¹ := by
-  sorry
+theorem inv_conv_zero : ∀ (δ : ℝ), 0 < δ → ∃ N, ∀ (n: ℕ), N ≤ n → |(n:ℝ )+1|⁻¹ < δ := by
+  intro δ δp
+  have := inv_range δ δp
+  rcases this with ⟨N, hN⟩
+  use N
+  intro n ltn
+  have := inv_mono n N ltn
+  exact lt_of_le_of_lt this hN
 
 theorem xi_dist_pos : ∀ n, 0 < |xi x₀ n - x₀| := by
   intro n
   simp [xi]
-  linarith
+  positivity
+
+theorem xi_tends_to_x₀ : ∀ δ, 0 < δ → ∃ N, ∀ (n: ℕ), N ≤ n → |xi x₀ n - x₀| < δ := by
+  intro δ δp
+  unfold xi
+  norm_num
+  exact inv_conv_zero δ δp
 
 theorem set_containing_all_sequences_tending_to_x₀_is_nhd (s : Set ℝ) (x₀ : ℝ) :
   (∀ (xi : ℕ → ℝ), (∀ δ, 0 < δ → ∃ N, ∀ n, N ≤ n → |xi n - x₀| < δ) ->
@@ -262,12 +277,12 @@ theorem set_containing_all_sequences_tending_to_x₀_is_nhd (s : Set ℝ) (x₀ 
     choose badn b c using this
     have badn_conv : ∀ ε > 0, ∃ N, ∀ n ≥ N, |badn n - x₀| < ε := by
       intro ε εp
-      have := (xi_range ε εp)
+      have := (inv_range ε εp)
       rcases this with ⟨N, hN⟩
       use N
       intro n ltn
       have b2 := b n
-      have := xi_inv_mono n N ltn
+      have := inv_mono n N ltn
       norm_num at *
       have := lt_of_le_of_lt this hN
       exact lt_trans b2 this
@@ -365,6 +380,5 @@ theorem BurdenContinuousAt_iff_BurdenTendstoSequence (f : ℝ → ℝ)  (x₀: �
       rcases this with ⟨N, hN⟩
       use N
       intro n ltn
-      have := hN n ltn
-      have := b (f (xi n)) this
+      have := b (f (xi n)) (hN n ltn)
       assumption

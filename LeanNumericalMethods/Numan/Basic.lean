@@ -357,8 +357,14 @@ theorem FilterBasedContinuous_iff_FilterBasedTendstoSequence (f : ℝ → ℝ)  
         rw [all_seq_tendsto_filter_eq_nhds] at this
         exact this
 
--- It is nice to show the whole thing in epsilon-delta form as well
 theorem BurdenContinuousAt_iff_BurdenTendstoSequence (f : ℝ → ℝ)  (x₀: ℝ):
+  ContinuousAt f x₀ ↔ ∀ (xi : ℕ → ℝ), ( Burden.TendstoSequence xi x₀) → Burden.TendstoSequence (f ∘ xi) (f x₀) := by
+    simp [FilterBasedContinuous_iff_FilterBasedTendstoSequence,
+          SetBasedTendstoSequence_iff_BurdenTendstoSequence,
+          FilterTendstoSequence_iff_SetBasedTendstoSequence]
+
+-- It is nice to show the whole thing in epsilon-delta form as well
+theorem BurdenContinuousAt_iff_BurdenTendstoSequence' (f : ℝ → ℝ)  (x₀: ℝ):
   ContinuousAt f x₀ ↔ ∀ (xi : ℕ → ℝ), ( Burden.TendstoSequence xi x₀) → Burden.TendstoSequence (f ∘ xi) (f x₀) := by
     unfold Burden.TendstoSequence
     unfold ContinuousAt

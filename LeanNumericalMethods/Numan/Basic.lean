@@ -234,19 +234,19 @@ example (x₀ : ℝ) (xii : ℕ → ℝ) (h : map xii atTop ≤ 𝓝 x₀) : map
 -- We will prove directly using epsilon-delta arguments for balls and sequences in the reals
 -- that a set containing all sequences that tend to x₀ is a neighbourhood of x₀
 
-noncomputable def xi (x₀ : ℝ) (n : ℕ) : ℝ := x₀ + |(n:ℝ)+1|⁻¹
+noncomputable def xi (x₀ : ℝ) (n : ℕ) : ℝ := x₀ + ((n:ℝ) + 1)⁻¹
 
-theorem inv_mono : ∀ (n N: ℕ), N ≤ n → |(n: ℝ ) + 1|⁻¹ ≤ |(N : ℝ ) + 1|⁻¹ := by
+theorem inv_mono : ∀ (n N: ℕ), N ≤ n → ((n: ℝ ) + 1)⁻¹ ≤ ((N : ℝ ) + 1)⁻¹ := by
   intro n N ltn
   gcongr
 
-theorem inv_range : ∀ (δ : ℝ), 0 < δ → ∃ n:ℕ, |(n: ℝ )+1|⁻¹ < δ := by
+theorem inv_range : ∀ (δ : ℝ), 0 < δ → ∃ n:ℕ, ((n: ℝ )+1)⁻¹ < δ := by
   intro δ δp
   have := exists_nat_one_div_lt δp
   norm_num at this
   norm_cast at *
 
-theorem inv_conv_zero : ∀ (δ : ℝ), 0 < δ → ∃ N, ∀ (n: ℕ), N ≤ n → |(n:ℝ )+1|⁻¹ < δ := by
+theorem inv_conv_zero : ∀ (δ : ℝ), 0 < δ → ∃ N, ∀ (n: ℕ), N ≤ n → ((n:ℝ )+1)⁻¹ < δ := by
   intro δ δp
   have := inv_range δ δp
   rcases this with ⟨N, hN⟩
@@ -254,6 +254,11 @@ theorem inv_conv_zero : ∀ (δ : ℝ), 0 < δ → ∃ N, ∀ (n: ℕ), N ≤ n 
   intro n ltn
   have := inv_mono n N ltn
   exact lt_of_le_of_lt this hN
+
+theorem pos_lem : ∀ n: ℕ, |(n: ℝ ) + 1| = n + 1 := by
+    intro n
+    norm_num
+    positivity
 
 theorem xi_dist_pos : ∀ n, 0 < |xi x₀ n - x₀| := by
   intro n
@@ -264,6 +269,7 @@ theorem xi_tends_to_x₀ : ∀ δ, 0 < δ → ∃ N, ∀ (n: ℕ), N ≤ n → |
   intro δ δp
   unfold xi
   norm_num
+  simp_rw [pos_lem]
   exact inv_conv_zero δ δp
 
 theorem set_containing_all_sequences_tending_to_x₀_is_nhd (s : Set ℝ) (x₀ : ℝ) :
@@ -285,6 +291,7 @@ theorem set_containing_all_sequences_tending_to_x₀_is_nhd (s : Set ℝ) (x₀ 
       have := inv_mono n N ltn
       norm_num at *
       have := lt_of_le_of_lt this hN
+      simp_rw [pos_lem] at *
       exact lt_trans b2 this
     have h2 := h badn badn_conv
     rcases h2 with ⟨N, hN⟩

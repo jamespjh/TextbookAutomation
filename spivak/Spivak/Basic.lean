@@ -83,8 +83,61 @@ theorem spivak_1_21 (x0 y0 x y : ℝ) (ε : ℝ) (hε : ε > 0)
 -- if y0 ne 0 and |y-y0| < min (|y0| / 2, ε |y0|^2 / 2)
 -- then |1/y - 1/y0| < ε
 
-theorem spivak_1_22 (y0 y : ℝ) (ε : ℝ) (hε : ε > 0) (hy0 : y0 ≠ 0)
-  (hy : |y - y0| < min (|y0| / 2) (ε * |y0|^2 / 2)) :
+theorem spivak_1_22 (y0 y : ℝ) (ε : ℝ) (_ : ε > 0) (hy0 : y0 ≠ 0)
+  (hy : |y - y0| < min (|y0| / 2) (ε * |y0| ^ 2 / 2)) :
   |1 / y - 1 / y0| < ε := by
+  -- substitute a new variable for y - y0
+  set εy := (y - y0) with hεy
+  have hyy : y = εy + y0 := by linarith
+  rw [hyy]
+  -- split the minimum into two hypotheses
   have hy₁ := lt_of_lt_of_le hy (min_le_left _ _)
   have hy₂ := lt_of_lt_of_le hy (min_le_right _ _)
+  -- establish the key lemmas for magnitudes
+  have lem1: ∀ a b : ℝ, |a + b| ≥ |a| - |b| := by
+    intro a b
+    have sub := abs_add_le (-b) (a+b)
+    simp at sub ; linarith
+  have : |y0 + εy| ≥ |y0| - |εy| := lem1 (y0) (εy)
+  have key : |y0 + εy| ≥ |y0|/2 := by
+    linarith
+  -- Establish a couple of 'obvious' lemmas so that we can manipulate
+  have y0p : 0 < |y0|/2 := by
+    apply div_pos
+    · apply abs_pos.mpr ; assumption
+    · simp
+  have sump : εy + y0 ≠ 0 := by
+    have := ne_of_gt (lt_of_lt_of_le y0p key)
+    rw [add_comm]
+    apply abs_ne_zero.mp ; assumption
+  -- And prove by calculation:
+  calc |(1 / (εy + y0)) - 1 / y0|
+    _ = |(y0 - (εy + y0)) / ((εy + y0) * y0)| := by
+      field_simp
+    _ = |(-εy) / ((εy + y0) * y0)| := by
+      ring_nf
+    _ = |εy| / |(εy + y0) * y0| := by
+      rw [abs_div]
+      rw [abs_neg]
+    _ = |εy| / (|εy + y0| * |y0|) := by
+      rw [abs_mul]
+    _ = (|εy| / |y0|)/ (|εy + y0|) := by
+      field_simp
+    _ ≤ (|εy| / |y0|) / ((|y0|/2) ) := by
+      -- Pull off the multiplying factor so we're left with the key proof
+      apply mul_le_mul_of_nonneg_left
+      -- Tidy up so form matches the key result
+      · rw [inv_eq_one_div]
+        rw [inv_eq_one_div]
+        rw [add_comm]
+      -- Apply our key result
+        apply one_div_le_one_div_of_le (?_) (key)
+        assumption
+      -- Tidy up the nonnegativity conditions
+      · apply div_nonneg <;> apply abs_nonneg
+    _ = 2 * |εy| / (|y0| * |y0|) := by
+      field_simp
+    _ < ε := by
+      field_simp
+      field_simp at hy₂
+      linarith

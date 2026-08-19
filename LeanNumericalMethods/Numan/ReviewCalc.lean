@@ -398,3 +398,10 @@ theorem BurdenContinuousAt_iff_BurdenTendstoSequence' (f : ℝ → ℝ)  (x₀: 
       intro n ltn
       have := b (f (xi n)) (hN n ltn)
       assumption
+
+-- Definition 1.5: derivative of a function.
+-- Our initial objective is to relate derivatives as defined in Mathlib, to the epsilon-delta definition in Burden and Faires.
+
+-- Mathlib works with Frechet derivatives, which are more general than the epsilon-delta definition,
+-- but we can show that they are equivalent in the case of functions from ℝ to ℝ.
+

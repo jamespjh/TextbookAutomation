@@ -11,7 +11,7 @@ import Mathlib.Tactic.FieldSimp
 
 def norm (x y : ℝ) : ℝ := |x| + |y|
 
-theorem spivak_1_21 (x0 y0 x y : ℝ) (ε : ℝ) (hε : ε > 0)
+theorem spivak_1_21 (x0 y0 x y : ℝ) (ε : ℝ)
   (hx : |x - x0| < min (ε / (2 * (|y0| + 1))) 1)
   (hy : |y - y0| < ε / (2 * (|x0| + 1))) :
   |x * y - x0 * y0| < ε := by
@@ -26,6 +26,18 @@ theorem spivak_1_21 (x0 y0 x y : ℝ) (ε : ℝ) (hε : ε > 0)
   -- split the minimum into two hypotheses
   have hx₁ := lt_of_lt_of_le hx (min_le_left _ _)
   have hx₂ := lt_of_lt_of_le hx (min_le_right _ _)
+  -- establish ε +ve
+  have εp : 0 < ε := by
+    field_simp at hy
+    have : 0 < 2 * (|x0| + 1) := by
+      apply mul_pos
+      · linarith
+      · positivity
+    have : 0 <= |εy| * (2 * (|x0| + 1)) := by
+      apply mul_nonneg
+      · apply abs_nonneg
+      · linarith
+    linarith
   -- Build the constraints multipled by |y0| and |x0| respectively
   have h2 : |εx| * |y0| <= (ε / (2 * (|y0| + 1))) * |y0| := by
     apply mul_le_mul_of_nonneg_right
@@ -73,7 +85,8 @@ theorem spivak_1_21 (x0 y0 x y : ℝ) (ε : ℝ) (hε : ε > 0)
     _ < (ε / 2) * (2) := by
       apply mul_lt_mul_of_pos_left
       · apply bound
-      · simpa [Nat.ofNat_pos, div_pos_iff_of_pos_right]
+      · simp only [Nat.ofNat_pos, div_pos_iff_of_pos_right]
+        assumption
     _ = ε := by
       simp
 
@@ -83,33 +96,44 @@ theorem spivak_1_21 (x0 y0 x y : ℝ) (ε : ℝ) (hε : ε > 0)
 -- if y0 ne 0 and |y-y0| < min (|y0| / 2, ε |y0|^2 / 2)
 -- then |1/y - 1/y0| < ε
 
-theorem spivak_1_22 (y0 y : ℝ) (ε : ℝ) (_ : ε > 0) (hy0 : y0 ≠ 0)
-  (hy : |y - y0| < min (|y0| / 2) (ε * |y0| ^ 2 / 2)) :
-  |1 / y - 1 / y0| < ε := by
-  -- substitute a new variable for y - y0
-  set εy := (y - y0) with hεy
-  have hyy : y = εy + y0 := by linarith
-  rw [hyy]
-  -- split the minimum into two hypotheses
-  have hy₁ := lt_of_lt_of_le hy (min_le_left _ _)
-  have hy₂ := lt_of_lt_of_le hy (min_le_right _ _)
-  -- establish the key lemmas for magnitudes
+theorem delpos (y0 y : ℝ)
+  (hy : |y - y0| < |y0| / 2) : |y| ≥ |y0|/2 := by
+    -- establish the key lemmas for magnitudes
   have lem1: ∀ a b : ℝ, |a + b| ≥ |a| - |b| := by
     intro a b
     have sub := abs_add_le (-b) (a+b)
     simp at sub ; linarith
-  have : |y0 + εy| ≥ |y0| - |εy| := lem1 (y0) (εy)
-  have key : |y0 + εy| ≥ |y0|/2 := by
-    linarith
-  -- Establish a couple of 'obvious' lemmas so that we can manipulate
-  have y0p : 0 < |y0|/2 := by
-    apply div_pos
-    · apply abs_pos.mpr ; assumption
-    · simp
-  have sump : εy + y0 ≠ 0 := by
-    have := ne_of_gt (lt_of_lt_of_le y0p key)
-    rw [add_comm]
+  have lem2 : |y| ≥ |y0| - |(y - y0)| := by
+      have := lem1 (y0) (y - y0)
+      simp only [ge_iff_le, tsub_le_iff_right]
+      simp at this
+      assumption
+  linarith
+
+theorem y0p (y0 : ℝ) (hy0 : y0 ≠ 0) : 0 < |y0|/2 := by
+  apply div_pos
+  · apply abs_pos.mpr ; assumption
+  · simp
+
+theorem spivak_1_22 (y0 y : ℝ) (ε : ℝ) (hy0 : y0 ≠ 0)
+  (hy : |y - y0| < min (|y0| / 2) (ε * |y0| ^ 2 / 2)) :
+  |1 / y - 1 / y0| < ε := by
+  -- split the minimum into two hypotheses
+  have hy₁ := lt_of_lt_of_le hy (min_le_left _ _)
+  have hy₂ := lt_of_lt_of_le hy (min_le_right _ _)
+  -- Establish y /ne 0
+  have key := delpos y0 y hy₁
+  have y0p := y0p y0 hy0
+  have nelem := ne_of_gt (lt_of_lt_of_le y0p key)
+  have : y ≠ 0 := by
     apply abs_ne_zero.mp ; assumption
+  -- substitute a new variable for y - y0
+  set εy := (y - y0) with hεy
+  have hyy : y = εy + y0 := by linarith
+  rw [hyy]
+  rw [hyy] at key
+  rw [hyy] at nelem
+  rw [hyy] at this
   -- And prove by calculation:
   calc |(1 / (εy + y0)) - 1 / y0|
     _ = |(y0 - (εy + y0)) / ((εy + y0) * y0)| := by
@@ -129,7 +153,6 @@ theorem spivak_1_22 (y0 y : ℝ) (ε : ℝ) (_ : ε > 0) (hy0 : y0 ≠ 0)
       -- Tidy up so form matches the key result
       · rw [inv_eq_one_div]
         rw [inv_eq_one_div]
-        rw [add_comm]
       -- Apply our key result
         apply one_div_le_one_div_of_le (?_) (key)
         assumption
@@ -141,3 +164,55 @@ theorem spivak_1_22 (y0 y : ℝ) (ε : ℝ) (_ : ε > 0) (hy0 : y0 ≠ 0)
       field_simp
       field_simp at hy₂
       linarith
+
+-- Spivak 1 problem 23
+-- Choose the minimal constraints A and B to just satisfy:
+-- Given y0 ne 0 and |y-y0| < A and |x-x0| < B
+-- then |x/y - x0/y0| < ε
+theorem spivak_1_23 (x0 y0 x y : ℝ) (ε : ℝ) (hy0 : y0 ≠ 0)
+  (hy : |y - y0| < min (|y0| / 2) (ε / (2 * (|x0| + 1)) * |y0| ^ 2 / 2))
+  (hx : |x - x0| < min (ε / (2 * (1 / |y0| + 1))) 1) :
+  |x / y - x0 / y0| < ε := by
+  -- The aim is to apply theorems 1_21 and 1_22 to the two terms of the difference
+  -- Applying 21 will create a constraint on the error in y, which will
+  -- Input into the error term on 21.
+  have hy₁ := lt_of_lt_of_le hy (min_le_left _ _)
+  -- Establish y /ne 0
+  have key := delpos y0 y hy₁
+  have y0p := y0p y0 hy0
+  have nelem := ne_of_gt (lt_of_lt_of_le y0p key)
+  have : y ≠ 0 := by
+    apply abs_ne_zero.mp ; assumption
+  -- substitute a new variable for 1/y
+  set z := 1/y with hz
+  set z0 := 1/y0 with hz0
+  have znz : z ≠ 0 := by
+    apply one_div_ne_zero
+    assumption
+  have hzz : y = 1/z := by
+    field_simp
+    field_simp at hz
+    rw [mul_comm]
+    assumption
+  have hz0nz : z0 ≠ 0 := by
+    apply one_div_ne_zero
+    assumption
+  have hzz0 : y0 = 1/z0 := by
+    field_simp
+    field_simp at hz0
+    rw [mul_comm]
+    assumption
+  have hzy0 : 1 / |y0| = |z0| := by
+    rw [abs_div]
+    rw [abs_one]
+  rw [hzz, hzz0]
+  have zA : |z - z0| < ε / (2 * (|x0| + 1)) := by
+    -- Rewrite ε / (2 * (|x0| + 1)) as ε'
+    set ε' := ε / (2 * (|x0| + 1)) with hε'
+    -- Convert back to ys
+    rw [hz, hz0]
+    -- Apply spivak_1_22 to get the constraint
+    exact spivak_1_22 y0 y ε' hy0 hy
+  simp only [one_div, div_inv_eq_mul, gt_iff_lt]
+  rw [hzy0] at hx
+  exact spivak_1_21 x0 z0 x z ε hx zA
